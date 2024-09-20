@@ -1,4 +1,5 @@
 
+import org.apache.commons.collections4.queue.CircularFifoQueue
 import scala.language.unsafeNulls
 
 object Main:
@@ -39,6 +40,20 @@ object Main:
         System.err.println("The arguments should be natural numbers")
         System.exit(4)
     }
+
+    // Set up input Scanner
+    val lines = scala.io.Source.stdin.getLines
+    val words = 
+      lines.flatMap(l => l.split("(?U)[^\\p{Alpha}0-9']+")).map(_.toLowerCase) //.map(_.toLowerCase) satisfies EC for case-insensitivity
+
+    val queue = new CircularFifoQueue[String](window_size)
+    words.filter(_.length >= length_at_least).foreach(queue.add)
+    // pseudo-code for functionality:
+    // Read words ((length >= l) and (EC:not in "ignore_list")) from input into a FIFO queue of length w.
+    // After queue fills up with w valid words, count the frequency of unique words in the queue.
+    // Output the top c words/frequencies (EC: only words with frequency >= f) in the format "w1:f1 w2:f2", where w1 is the first word and f1 is the corresponding frequency for w1.
+    // 
+
 
 
 end Main
