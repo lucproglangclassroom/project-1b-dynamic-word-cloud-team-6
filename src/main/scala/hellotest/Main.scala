@@ -1,6 +1,7 @@
 
 import org.apache.commons.collections4.queue.CircularFifoQueue
 import scala.language.unsafeNulls
+import scala.collection.mutable
 
 object Main:
 
@@ -41,13 +42,46 @@ object Main:
         System.exit(4)
     }
 
+
+    // Function to process full queue
+    def fullQueue(queue: CircularFifoQueue[String]): Map[String, Int] = {
+
+      // Create a variable 'frequency', which is a mutable map of a string and integer
+      val frequency = mutable.Map[String, Int]() 
+
+      // For each word in the current queue: if the string is not in 'frequency', set the word frequency to 0. Add 1 to the frequency.
+      queue.forEach {word => 
+        frequency(word) = frequency.getOrElse(word,0) + 1
+      }
+
+      // Sort by descending frequency and take the first c pairs
+      val sortedfrequency: Seq[(String, Int)] = frequency.toSeq.sortBy(-_._2).take(cloud_size)
+
+      val output = sortedfrequency.map {case (word,count) => s"$word: $count" }.mkString(" ")
+          
+      println(output)
+      sortedfrequency.toMap
+    }
+
+
     // Set up input Scanner
     val lines = scala.io.Source.stdin.getLines
     val words = 
       lines.flatMap(l => l.split("(?U)[^\\p{Alpha}0-9']+")).map(_.toLowerCase) //.map(_.toLowerCase) satisfies EC for case-insensitivity
 
     val queue = new CircularFifoQueue[String](window_size)
-    words.filter(_.length >= length_at_least).foreach(queue.add)
+
+    words.filter(_.length >= length_at_least).foreach {word =>
+
+      // Add the word to the queue
+      queue.add(word)
+      
+      // If the queue is full after adding the word, call the fullQueue function on the queue
+      if (queue.isAtFullCapacity) {
+        fullQueue(queue)
+      }
+    }
+
     // pseudo-code for functionality:
     // Read words ((length >= l) and (EC:not in "ignore_list")) from input into a FIFO queue of length w.
     // After queue fills up with w valid words, count the frequency of unique words in the queue.
