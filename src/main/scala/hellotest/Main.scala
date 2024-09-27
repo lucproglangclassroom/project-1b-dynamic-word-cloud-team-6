@@ -2,7 +2,7 @@
 import org.apache.commons.collections4.queue.CircularFifoQueue
 import scala.language.unsafeNulls
 import scala.collection.mutable
-
+import sun.misc.{Signal, SignalHandler} 
 
 object Main:
 
@@ -14,6 +14,14 @@ object Main:
   val EVERY_K = 10
 
   def main(args: Array[String]) = 
+
+    // Handle SIGPIPE signal by exiting 
+    Signal.handle(new Signal("PIPE"), new SignalHandler {
+      override def handle(sig: Signal): Unit = {
+        System.err.println("SIGPIPE detected. Terminating.")
+        System.exit(0)
+      }
+    })
 
     // Argument validity checking
     if (args.length > 5) {
@@ -61,9 +69,15 @@ object Main:
     }
 
     // Create OutputSink instance that prints the output of fullQueue. This separates I/O from logic
-    object myOutputSink extends OutputSink{
+    object myOutputSink extends OutputSink {
       def doOutput(value: String) = {
-        println(value)
+        try {
+          println(value)
+        } catch {
+          case _: java.io.IOException =>
+            System.err.println("Broken pipe error. Exiting")
+            System.exit(0)
+        }
       }
     }
 
