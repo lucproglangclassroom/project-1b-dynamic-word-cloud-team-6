@@ -42,9 +42,20 @@ object Main:
         System.exit(4)
     }
 
+    // Separate I/O and logic by creating OutputSink
+    trait OutputSink{
+      def doOutput(value: String): Unit
+    }
+
+    // Create OutputSink instance that prints the output of fullQueue. This separates I/O from logic
+    object myOutputSink extends OutputSink{
+      def doOutput(value: String) = {
+        println(value)
+      }
+    }
 
     // Function to process full queue
-    def fullQueue(queue: CircularFifoQueue[String]): Map[String, Int] = {
+    def fullQueue(queue: CircularFifoQueue[String], output:OutputSink): Unit = {
 
       // Create a variable 'frequency', which is a mutable map of a string and integer
       val frequency = mutable.Map[String, Int]() 
@@ -57,13 +68,12 @@ object Main:
       // Sort by descending frequency and take the first c pairs
       val sortedfrequency: Seq[(String, Int)] = frequency.toSeq.sortBy(-_._2).take(cloud_size)
 
-      val output = sortedfrequency.map {case (word,count) => s"$word: $count" }.mkString(" ")
-          
-      println(output)
-      sortedfrequency.toMap
+      val out = sortedfrequency.map {case (word,count) => s"$word: $count" }.mkString(" ")
+      output.doOutput(out)
+
     }
 
-
+    
     // Set up input Scanner
     val lines = scala.io.Source.stdin.getLines
     val words = 
@@ -78,7 +88,7 @@ object Main:
       
       // If the queue is full after adding the word, call the fullQueue function on the queue
       if (queue.isAtFullCapacity) {
-        fullQueue(queue)
+        fullQueue(queue,myOutputSink)
       }
     }
 
