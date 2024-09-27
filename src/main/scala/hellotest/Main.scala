@@ -9,12 +9,14 @@ object Main:
   val CLOUD_SIZE = 10
   val LENGTH_AT_LEAST = 6
   val WINDOW_SIZE = 1000
+  val MIN_FREQUENCY = 3
+  val EVERY_K = 10
 
   def main(args: Array[String]) = 
 
     // Argument validity checking
-    if (args.length > 3) {
-      System.err.nn.println("usage: ./target/universal/stage/bin/main [cloud-size] [length-at-least] [window-size]")
+    if (args.length > 5) {
+      System.err.nn.println("usage: ./target/universal/stage/bin/main [cloud-size] [length-at-least] [window-size] [min-frequency] [every-k-steps]")
       System.exit(2)
     }
 
@@ -22,6 +24,8 @@ object Main:
     var cloud_size = CLOUD_SIZE
     var length_at_least = LENGTH_AT_LEAST
     var window_size = WINDOW_SIZE
+    var min_frequency = MIN_FREQUENCY
+    var every_K = EVERY_K
 
     try {
       if (args.length >=1){
@@ -32,9 +36,17 @@ object Main:
         length_at_least = args(1).toInt
         if (length_at_least < 1) throw new NumberFormatException()
       }
-      if (args.length == 3) {
+      if (args.length >= 3) {
         window_size = args(2).toInt
         if (window_size < 1) throw new NumberFormatException()
+      }
+      if (args.length >= 4) {
+        min_frequency = args(3).toInt
+        if (min_frequency < 1) throw new NumberFormatException()
+      }
+      if (args.length == 5) {
+        every_K = args(4).toInt
+        if (every_K < 1) throw new NumberFormatException()
       }
     } catch{
       case _: NumberFormatException =>
@@ -66,7 +78,8 @@ object Main:
       }
 
       // Sort by descending frequency and take the first c pairs
-      val sortedfrequency: Seq[(String, Int)] = frequency.toSeq.sortBy(-_._2).take(cloud_size)
+      val sortedfrequency: Seq[(String, Int)] = frequency.toSeq.sortBy(-_._2).filter{case (_,count) => count >=min_frequency}.take(cloud_size)
+
 
       val out = sortedfrequency.map {case (word,count) => s"$word: $count" }.mkString(" ")
       output.doOutput(out)
@@ -81,13 +94,16 @@ object Main:
 
     val queue = new CircularFifoQueue[String](window_size)
 
+    var steps = 0 // Initialize to count steps
     words.filter(_.length >= length_at_least).foreach {word =>
 
       // Add the word to the queue
       queue.add(word)
+      steps += 1 // Increment steps by 1 after word added to queue
       
-      // If the queue is full after adding the word, call the fullQueue function on the queue
-      if (queue.isAtFullCapacity) {
+      // If the queue is full after adding the word AND steps >= k, call the fullQueue function on the queue. Additionally, reset steps.
+      if ((queue.isAtFullCapacity) & (steps >= every_K))  {
+        steps = 0
         fullQueue(queue,myOutputSink)
       }
     }
