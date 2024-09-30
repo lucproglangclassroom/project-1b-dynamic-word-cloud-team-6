@@ -83,12 +83,12 @@ object Main:
     // Set up input Scanner
     val lines = scala.io.Source.stdin.getLines
     val words = 
-      lines.flatMap(l => l.split("(?U)[^\\p{Alpha}0-9']+")).map(_.toLowerCase) //.map(_.toLowerCase) satisfies EC for case-insensitivity
+      lines.flatMap(l => l.split("(?U)[^\\p{Alpha}0-9']+")).map(_.toLowerCase).filter(_.length >= length_at_least) //.map(_.toLowerCase) satisfies EC for case-insensitivity
 
     val queue = new CircularFifoQueue[String](window_size)
 
     var steps = 0 // Initialize to count steps
-    words.filter(_.length >= length_at_least).foreach {word =>
+    words.foreach {word =>
 
       // Add the word to the queue
       queue.add(word)
@@ -105,11 +105,7 @@ object Main:
     logger.debug(f"Cloud Size = $cloud_size Length At Leasts = $length_at_least Window Size = $window_size Every K = $every_K Min Frequency = $min_frequency")
 
 
-    // pseudo-code for functionality:
-    // Read words ((length >= l) and (EC:not in "ignore_list")) from input into a FIFO queue of length w.
-    // After queue fills up with w valid words, count the frequency of unique words in the queue.
-    // Output the top c words/frequencies (EC: only words with frequency >= f) in the format "w1:f1 w2:f2", where w1 is the first word and f1 is the corresponding frequency for w1.
-    // 
+
   
     }
 
