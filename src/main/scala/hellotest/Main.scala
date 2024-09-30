@@ -23,27 +23,10 @@ object Main:
    
 
     try {
-          if (cloud_size < 1) {
+          if (cloud_size<1 || length_at_least<1 || window_size<1 || min_frequency<1 ||every_K<1) {
             throw new NumberFormatException()
           }
-        
-          if (length_at_least < 1) {
-            throw new NumberFormatException()
-          }
-          
-          if (window_size < 1) {
-            throw new NumberFormatException()
-          }
-      
-          if (min_frequency < 1) {
-            throw new NumberFormatException()
-          }
-      
-          if (every_K < 1) {
-            throw new NumberFormatException()
-          }
-        }
-     
+    }
     catch{
       case _: NumberFormatException =>
         System.err.println("The arguments should be natural numbers")
