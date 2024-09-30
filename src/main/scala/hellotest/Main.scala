@@ -4,13 +4,14 @@ import scala.language.unsafeNulls
 import scala.collection.mutable
 import sun.misc.{Signal, SignalHandler} 
 import mainargs.{main, arg, ParserForMethods, Flag}
+import org.log4s._
+
 
 object Main:
 
   // Default values for arguments
 
   def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args.toIndexedSeq)
-
   @main
   def run( 
     @arg(short = 'c', doc = "size of the sliding word cloud") cloud_size: Int = 10,
@@ -19,13 +20,7 @@ object Main:
     @arg(short = 's', doc = "number of steps between word cloud updates") every_K: Int = 10,
     @arg(short = 'f', doc = "minimum frequency for a word to be included in the cloud") min_frequency: Int = 3) = {
 
-    // Handle SIGPIPE signal by exiting 
-    Signal.handle(new Signal("PIPE"), new SignalHandler {
-      override def handle(sig: Signal): Unit = {
-        System.err.println("SIGPIPE detected. Terminating.")
-        System.exit(0)
-      }
-    })
+   
 
     try {
           if (cloud_size < 1) {
@@ -59,6 +54,14 @@ object Main:
     trait OutputSink{
       def doOutput(value: String): Unit
     }
+
+     // Handle SIGPIPE signal by exiting 
+    Signal.handle(new Signal("PIPE"), new SignalHandler {
+      override def handle(sig: Signal): Unit = {
+        System.err.println("SIGPIPE detected. Terminating.")
+        System.exit(0)
+      }
+    })
 
     // Create OutputSink instance that prints the output of fullQueue. This separates I/O from logic
     object myOutputSink extends OutputSink {
@@ -114,6 +117,10 @@ object Main:
         fullQueue(queue,myOutputSink)
       }
     }
+
+    val logger = org.log4s.getLogger
+    logger.debug(f"Cloud Size = $cloud_size Length At Leasts = $length_at_least Window Size = $window_size Every K = $every_K Min Frequency = $min_frequency")
+
 
     // pseudo-code for functionality:
     // Read words ((length >= l) and (EC:not in "ignore_list")) from input into a FIFO queue of length w.
