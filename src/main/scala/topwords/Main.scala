@@ -19,7 +19,8 @@ object Main:
     @arg(short = 'l', doc = "minimum word length to be considere") length_at_least: Int = 6,
     @arg(short = 'w', doc = "size of the sliding FIFO queue") window_size: Int = 1000,
     @arg(short = 'k', doc = "number of steps between word cloud updates") every_K: Int = 10,
-    @arg(short = 'f', doc = "minimum frequency for a word to be included in the cloud") min_frequency: Int = 3) = {
+    @arg(short = 'f', doc = "minimum frequency for a word to be included in the cloud") min_frequency: Int = 3,
+    @arg(short = 'i', doc = "path to ignore file") ignore_file: Option[String] = None) = {
 
    
 
@@ -42,10 +43,19 @@ object Main:
       }
     })
 
+
+    //Ignore file
+    val ignore: Set[String] = if (ignore_file.isDefined) {
+      scala.io.Source.fromFile(ignore_file.get).getLines().map(_.toLowerCase).toSet
+    } else {
+      Set.empty[String]
+    }
+
+
     // Set up input Scanner
     val lines = scala.io.Source.stdin.getLines
     val words = 
-      lines.flatMap(l => l.split("(?U)[^\\p{Alpha}0-9']+")).map(_.toLowerCase) //.map(_.toLowerCase) satisfies EC for case-insensitivity
+      lines.flatMap(l => l.split("(?U)[^\\p{Alpha}0-9']+")).map(_.toLowerCase).filter(word => !ignore.contains(word)) //.map(_.toLowerCase) satisfies EC for case-insensitivity
 
     // Call WordCloud with given words and arguements
     WordCloud.processing(words=words, cloud_size=cloud_size, length_at_least=length_at_least, window_size=window_size, every_K=every_K, min_frequency=min_frequency, outputSink=WordCloud.myOutputSink)
