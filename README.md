@@ -1,6 +1,7 @@
-# hello-scalatest-scala
+[![Open in Codespaces](https://classroom.github.com/assets/launch-codespace-2972f46106e565e64193e422d61a12cf1da4916b45550586e14ef0a7c637dd04.svg)](https://classroom.github.com/open-in-codespaces?assignment_repo_id=16021265)
+# Word Clouds
 
-Small project to get started with Scala and ScalaTest.
+Small project that creates words clouds given input text
 
 
 ## Running the main program
@@ -63,7 +64,13 @@ sbt stage
 Then run outside of sbt like this:
 
 ```
-./target/universal/stage/bin/hello-scalatest-scala
+./target/universal/stage/bin/topwords
 ```
 
 On Windows, you might need backslashes. WSL (Windows Subsystem for Linux) recommended instead.
+
+## Extra credit
+* Can take an "ignore.txt" file of words to be ignored regardless of length
+* Case-insensitive input
+* Command-line argument for updating the word cloud only every k steps
+* Command-line argument for a minimum frequency to include a word in the word cloud
