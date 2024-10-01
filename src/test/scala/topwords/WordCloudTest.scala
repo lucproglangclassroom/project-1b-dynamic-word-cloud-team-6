@@ -2,6 +2,7 @@ package topwords
 
 import org.scalatest.funsuite.AnyFunSuite
 import scala.collection.mutable.Map
+import scala.language.unsafeNulls
 
 
 
@@ -86,6 +87,63 @@ class WordCloudTest extends AnyFunSuite {
     intercept[NumberFormatException] {
       Main.argValidation(-1,5,100,1,2)
     }
+  }
+
+
+  test("Words with non-alphanumeric characters are processed correctly") {
+    val words = Iterator("hello!", "@world", "hello", "#scala", "world?", "hello")
+      .flatMap(_.split("(?U)[^\\p{Alpha}0-9']+"))
+      .map(_.toLowerCase)
+    val output = new TestOutputSink()
+    WordCloud.processing(
+      words = words,
+      cloud_size = 3,
+      length_at_least = 1,
+      window_size = 6,
+      every_K = 1,
+      min_frequency = 1,
+      outputSink = output
+    )
+
+    assert(output.freqMap("hello") == 3, "Frequency of 'hello' should be 3")
+    assert(output.freqMap("world") == 2, "Frequency of 'world' should be 2")
+    assert(output.freqMap("scala") == 1, "Frequency of 'scala' should be 1")
+  }
+
+  test("Words with apostrophes are processed correctly") {
+    val words = Iterator("don't", "can't", "won't", "can't", "don't")
+    val output = new TestOutputSink()
+    WordCloud.processing(
+      words = words,
+      cloud_size = 3,
+      length_at_least = 3,
+      window_size = 5,
+      every_K = 1,
+      min_frequency = 1,
+      outputSink = output
+    )
+
+    assert(output.freqMap("don't") == 2, "Frequency of 'don't' should be 2")
+    assert(output.freqMap("can't") == 2, "Frequency of 'can't' should be 2")
+    assert(output.freqMap("won't") == 1, "Frequency of 'won't' should be 1")
+  }
+
+  test("Words are counted in a case-insensitive manner") {
+    val words = Iterator("Hello", "world", "HELLO", "World", "hello")
+      .map(_.toLowerCase)
+    val output = new TestOutputSink()
+    WordCloud.processing(
+      words = words,
+      cloud_size = 2,
+      length_at_least = 1,
+      window_size = 5,
+      every_K = 1,
+      min_frequency = 1,
+      outputSink = output
+    )
+
+    assert(output.freqMap("hello") == 3, "Frequency of 'hello' should be 3")
+    assert(output.freqMap("world") == 2, "Frequency of 'world' should be 2")
   }
 
 
