@@ -17,7 +17,7 @@ object Main:
     @arg(short = 'c', doc = "size of the sliding word cloud") cloud_size: Int = 10,
     @arg(short = 'l', doc = "minimum word length to be considere") length_at_least: Int = 6,
     @arg(short = 'w', doc = "size of the sliding FIFO queue") window_size: Int = 1000,
-    @arg(short = 's', doc = "number of steps between word cloud updates") every_K: Int = 10,
+    @arg(short = 'k', doc = "number of steps between word cloud updates") every_K: Int = 10,
     @arg(short = 'f', doc = "minimum frequency for a word to be included in the cloud") min_frequency: Int = 3) = {
 
    
