@@ -1,3 +1,4 @@
+package topwords
 
 import org.apache.commons.collections4.queue.CircularFifoQueue
 import scala.language.unsafeNulls
@@ -72,21 +73,22 @@ object WordCloud {
       // If the queue is full after adding the word AND steps >= k, call the fullQueue function on the queue. Additionally, reset steps.
       if ((queue.isAtFullCapacity) & (steps >= every_K))  {
         steps = 0
-        fullQueue(queue,cloud_size, min_frequency, myOutputSink)
+        fullQueue(queue,cloud_size, min_frequency, outputSink)
       }
     }
   }
 
   // Separate I/O and logic by creating OutputSink
   trait OutputSink{
-    def doOutput(value: String): Unit
+    def doOutput(value: Seq[(String,Int)]): Unit
   }
 
   // Create OutputSink instance that prints the output of fullQueue. This separates I/O from logic
   object myOutputSink extends OutputSink {
-    def doOutput(value: String) = {
+    def doOutput(value: Seq[(String, Int)]) = {
       try {
-        println(value)
+        val out = value.map {case (word,count) => s"$word: $count" }.mkString(" ")
+        println(out)
       } catch {
         case _: java.io.IOException =>
           System.err.println("Broken pipe error. Exiting")
@@ -109,9 +111,7 @@ object WordCloud {
     // Sort by descending frequency and take the first c pairs
     val sortedfrequency: Seq[(String, Int)] = frequency.toSeq.sortBy(-_._2).filter{case (_,count) => count >=min_frequency}.take(cloud_size)
 
-
-    val out = sortedfrequency.map {case (word,count) => s"$word: $count" }.mkString(" ")
-    output.doOutput(out)
+    output.doOutput(sortedfrequency)
 
   }
 
