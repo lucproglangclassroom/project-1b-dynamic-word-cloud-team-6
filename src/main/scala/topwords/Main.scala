@@ -12,7 +12,23 @@ object Main:
 
   // Default values for arguments
 
-  def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args.toIndexedSeq)
+
+  def argValidation(cloud_size: Int, length_at_least: Int, window_size: Int, min_frequency: Int, every_K: Int): Unit = {
+  if (cloud_size<1 || length_at_least<1 || window_size<1 || min_frequency<1 ||every_K<1) {
+    throw new NumberFormatException("Arguments should be natural numbers")
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
+    try {
+      ParserForMethods(this).runOrExit(args.toIndexedSeq)
+    } catch {
+      case e: NumberFormatException =>
+        System.err.println(e.getMessage)
+        System.exit(4)
+    }
+  }
+
   @main
   def run( 
     @arg(short = 'c', doc = "size of the sliding word cloud") cloud_size: Int = 10,
@@ -22,18 +38,8 @@ object Main:
     @arg(short = 'f', doc = "minimum frequency for a word to be included in the cloud") min_frequency: Int = 3,
     @arg(short = 'i', doc = "path to ignore file") ignore_file: Option[String] = None) = {
 
-   
+  
 
-    try {
-          if (cloud_size<1 || length_at_least<1 || window_size<1 || min_frequency<1 ||every_K<1) {
-            throw new NumberFormatException()
-          }
-    }
-    catch{
-      case _: NumberFormatException =>
-        System.err.println("The arguments should be natural numbers")
-        System.exit(4)
-    }
 
     // Handle SIGPIPE signal by exiting 
     Signal.handle(new Signal("PIPE"), new SignalHandler {
