@@ -78,20 +78,19 @@ object WordCloud {
 
   def processing(words: Iterator[String], cloud_size: Int, length_at_least: Int, window_size: Int, every_K: Int, min_frequency: Int, outputSink: OutputSink): Unit = {
 
-    val queue = new CircularFifoQueue[String](window_size)
-    var steps = 0 // Initialize to count steps
-    words.filter(_.length >= length_at_least).foreach {word =>
+    words.filter(_.length >= length_at_least).scanLeft((0,List.empty[String])) {case ((steps,queue),word) =>
+      val newQueue = (queue :+ word).takeRight(window_size)
+      val newSteps = steps+1
 
-      // Add the word to the queue
-      queue.add(word)
-      steps += 1 // Increment steps by 1 after word added to queue
-      
-      // If the queue is full after adding the word AND steps >= k, call the fullQueue function on the queue. Additionally, reset steps.
-      if ((queue.isAtFullCapacity) & (steps >= every_K))  {
-        steps = 0
-        fullQueue(queue,cloud_size, min_frequency, outputSink)
+      if (newQueue.size >= window_size && newSteps >= every_K) {
+        fullQueue(newQueue,cloud_size,min_frequency,outputSink)
+        (0,newQueue) //Resets steps
+      } else {
+        (newSteps,newQueue)
       }
+
     }
+    .foreach { _ => () }
   }
 
   // Separate I/O and logic by creating OutputSink
@@ -114,15 +113,10 @@ object WordCloud {
   }
 
   // Function to process full queue
-  def fullQueue(queue: CircularFifoQueue[String], cloud_size: Int, min_frequency: Int, output:OutputSink): Unit = {
+  def fullQueue(queue: List[String], cloud_size: Int, min_frequency: Int, output:OutputSink): Unit = {
 
-    // Create a variable 'frequency', which is a mutable map of a string and integer
-    val frequency = mutable.Map[String, Int]() 
-
-    // For each word in the current queue: if the string is not in 'frequency', set the word frequency to 0. Add 1 to the frequency.
-    queue.forEach {word => 
-      frequency(word) = frequency.getOrElse(word,0) + 1
-    }
+    // Create a variable 'frequency', which contains a map with identical words grouped together as the key and the value as the value/frequency of the grouped words
+    val frequency = queue.groupBy(identity).view.mapValues(_.size).toMap 
 
     // Sort by descending frequency and take the first c pairs
     val sortedfrequency: Seq[(String, Int)] = frequency.toSeq.sortBy(-_._2).filter{case (_,count) => count >=min_frequency}.take(cloud_size)
