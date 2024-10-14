@@ -2,7 +2,7 @@ name := "topwords"
 
 version := "0.3"
 
-scalaVersion := "3.3.3"
+scalaVersion := "3.4.2"
 
 scalacOptions += "@.scalacOptions.txt"
 
@@ -15,5 +15,8 @@ libraryDependencies ++= Seq(
   "org.log4s" %% "log4s" % "1.10.0",
   "org.slf4j" % "slf4j-simple" % "1.7.30"
 )
+
+coverageExcludedPackages := ".*Main*"
+
 
 enablePlugins(JavaAppPackaging)
