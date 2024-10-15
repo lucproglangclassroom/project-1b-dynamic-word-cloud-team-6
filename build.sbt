@@ -14,7 +14,8 @@ libraryDependencies ++= Seq(
   "com.lihaoyi" %% "mainargs" % "0.6.3",
   "org.log4s" %% "log4s" % "1.10.0",
   "org.slf4j" % "slf4j-simple" % "1.7.30",
-  "org.scala-lang.modules" %% "scala-swing" % "3.0.0"
+  "org.scala-lang.modules" %% "scala-swing" % "3.0.0",
+  "org.jfree" % "jfreechart" % "1.5.3"
 )
 
 coverageExcludedPackages := ".*Main*"

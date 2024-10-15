@@ -10,6 +10,10 @@ import java.awt.Color
 import javax.swing.JFrame
 import java.awt.Graphics
 import java.awt.Dimension
+import org.jfree.data.category.DefaultCategoryDataset
+import org.jfree.chart.ChartFactory
+import javax.imageio.ImageIO
+import java.io.File
 
 
 object Main:
@@ -110,6 +114,7 @@ object WordCloud {
       try {
         val out = value.map {case (word,count) => s"$word: $count" }.mkString(" ")
         println(out)
+        visualization(value) // call barchart visualization
         javax.swing.SwingUtilities.invokeLater(() => WordCloudVisualizer.updateWordCloud(value))
       } catch {
         case _: java.io.IOException =>
@@ -129,6 +134,27 @@ object WordCloud {
     val sortedfrequency: Seq[(String, Int)] = frequency.toSeq.sortBy(-_._2).filter{case (_,count) => count >=min_frequency}.take(cloud_size)
 
     output.doOutput(sortedfrequency)
+
+  }
+
+    def visualization(wordCounts: Seq[(String,Int)]): Unit = {
+
+    val data = new DefaultCategoryDataset() //Initialize dataset to hold words and frequencies
+
+    //Add words and their frequencies to the dataset
+    wordCounts.foldLeft(data) { (d,wordCount) =>
+      val (word,count) = wordCount
+      d.addValue(count, "Word", word)
+      d
+    }
+
+    // Create the barchart 
+    val barchart = ChartFactory.createBarChart("Word Cloud Barchart","Words","Frequency",data)
+
+    val image = barchart.createBufferedImage(1000,800)
+
+    // Write an image to the docs folder
+    ImageIO.write(image, "png", new File("docs/barchart.png"))
 
   }
 
