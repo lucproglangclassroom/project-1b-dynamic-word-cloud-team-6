@@ -6,10 +6,6 @@ import scala.collection.mutable
 import sun.misc.{Signal, SignalHandler} 
 import mainargs.{main, arg, ParserForMethods, Flag}
 import org.log4s._
-import java.awt.Color
-import javax.swing.JFrame
-import java.awt.Graphics
-import java.awt.Dimension
 import org.jfree.data.category.DefaultCategoryDataset
 import org.jfree.chart.ChartFactory
 import javax.imageio.ImageIO
@@ -44,7 +40,8 @@ object Main:
     @arg(short = 'w', doc = "size of the sliding FIFO queue") window_size: Int = 1000,
     @arg(short = 'k', doc = "number of steps between word cloud updates") every_K: Int = 10,
     @arg(short = 'f', doc = "minimum frequency for a word to be included in the cloud") min_frequency: Int = 3,
-    @arg(short = 'i', doc = "path to ignore file") ignore_file: Option[String] = None) = {
+    @arg(short = 'i', doc = "path to ignore file") ignore_file: Option[String] = None,
+    @arg(short = 't', doc = "path to input text file") input_file: Option[String] = None) = {
 
     // Handle SIGPIPE signal by exiting 
     try {
@@ -70,7 +67,10 @@ object Main:
     }
 
     // Set up input Scanner
-    val lines = scala.io.Source.stdin.getLines
+    val lines = input_file match {
+      case Some(path) => scala.io.Source.fromFile(path).getLines()
+      case None => scala.io.Source.stdin.getLines()
+    }
     val words = 
       lines.flatMap(l => l.split("(?U)[^\\p{Alpha}0-9']+")).map(_.toLowerCase).filter(word => !ignore.contains(word))
 
@@ -115,7 +115,6 @@ object WordCloud {
         val out = value.map {case (word,count) => s"$word: $count" }.mkString(" ")
         println(out)
         visualization(value) // call barchart visualization
-        javax.swing.SwingUtilities.invokeLater(() => WordCloudVisualizer.updateWordCloud(value))
       } catch {
         case _: java.io.IOException =>
           System.err.println("Broken pipe error. Exiting")
@@ -158,34 +157,4 @@ object WordCloud {
 
   }
 
-}
-
-object WordCloudVisualizer extends JFrame {
-
-  private var wordCloudData: Seq[(String, Int)] = Seq.empty
-
-  setTitle("Word Cloud Visualization")
-  setSize(new Dimension(800, 600))
-  setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE)
-  setVisible(true)
-
-  override def paint(g: Graphics): Unit = {
-    super.paint(g)
-    if (wordCloudData.nonEmpty) {
-      val maxFrequency = wordCloudData.map(_._2).max
-      val fontSizeMultiplier = 5
-
-      wordCloudData.zipWithIndex.foreach { case ((word, frequency), index) =>
-        val fontSize = (frequency.toDouble / maxFrequency * fontSizeMultiplier * 10).toInt
-        g.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, fontSize))
-        g.setColor(Color.getHSBColor((index * 0.1f) % 1.0f, 0.7f, 0.8f))
-        g.drawString(word, 50 + (index % 10) * 70, 100 + (index / 10) * 70)
-      }
-    }
-  }
-
-  def updateWordCloud(data: Seq[(String, Int)]): Unit = {
-    wordCloudData = data
-    repaint()
-  }
 }
