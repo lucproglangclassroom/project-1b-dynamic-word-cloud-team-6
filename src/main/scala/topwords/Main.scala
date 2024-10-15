@@ -6,6 +6,10 @@ import scala.collection.mutable
 import sun.misc.{Signal, SignalHandler} 
 import mainargs.{main, arg, ParserForMethods, Flag}
 import org.log4s._
+import java.awt.Color
+import javax.swing.JFrame
+import java.awt.Graphics
+import java.awt.Dimension
 
 
 object Main:
@@ -38,38 +42,40 @@ object Main:
     @arg(short = 'f', doc = "minimum frequency for a word to be included in the cloud") min_frequency: Int = 3,
     @arg(short = 'i', doc = "path to ignore file") ignore_file: Option[String] = None) = {
 
-  
-
-
     // Handle SIGPIPE signal by exiting 
-    Signal.handle(new Signal("PIPE"), new SignalHandler {
-      override def handle(sig: Signal): Unit = {
+    try {
+      Signal.handle(new Signal("PIPE"), _ => {
         System.err.println("SIGPIPE detected. Terminating.")
         System.exit(0)
-      }
-    })
-
-
-    //Ignore file
-    val ignore: Set[String] = if (ignore_file.isDefined) {
-      scala.io.Source.fromFile(ignore_file.get).getLines().map(_.toLowerCase).toSet
-    } else {
-      Set.empty[String]
+      })
+    } catch {
+      case e: IllegalArgumentException =>
+        System.err.println("Signal handling not supported on this platform.")
     }
 
+    // Ignore file
+    val ignore: Set[String] = try {
+      ignore_file match {
+        case Some(path) => scala.io.Source.fromFile(path).getLines().map(_.toLowerCase).toSet
+        case None => Set.empty[String]
+      }
+    } catch {
+      case e: Exception =>
+        System.err.println(s"Error reading ignore file: ${e.getMessage}")
+        Set.empty[String]
+    }
 
     // Set up input Scanner
     val lines = scala.io.Source.stdin.getLines
     val words = 
-      lines.flatMap(l => l.split("(?U)[^\\p{Alpha}0-9']+")).map(_.toLowerCase).filter(word => !ignore.contains(word)) //.map(_.toLowerCase) satisfies EC for case-insensitivity
+      lines.flatMap(l => l.split("(?U)[^\\p{Alpha}0-9']+")).map(_.toLowerCase).filter(word => !ignore.contains(word))
 
-    // Call WordCloud with given words and arguements
+    // Call WordCloud with given words and arguments
     WordCloud.processing(words=words, cloud_size=cloud_size, length_at_least=length_at_least, window_size=window_size, every_K=every_K, min_frequency=min_frequency, outputSink=WordCloud.myOutputSink)
 
     val logger = org.log4s.getLogger
     logger.debug(f"Cloud Size = $cloud_size Length At Leasts = $length_at_least Window Size = $window_size Every K = $every_K Min Frequency = $min_frequency")
-
-    }
+  }
 
 end Main
 
@@ -84,7 +90,7 @@ object WordCloud {
 
       if (newQueue.size >= window_size && newSteps >= every_K) {
         fullQueue(newQueue,cloud_size,min_frequency,outputSink)
-        (0,newQueue) //Resets steps
+        (0,newQueue) // Resets steps
       } else {
         (newSteps,newQueue)
       }
@@ -104,6 +110,7 @@ object WordCloud {
       try {
         val out = value.map {case (word,count) => s"$word: $count" }.mkString(" ")
         println(out)
+        javax.swing.SwingUtilities.invokeLater(() => WordCloudVisualizer.updateWordCloud(value))
       } catch {
         case _: java.io.IOException =>
           System.err.println("Broken pipe error. Exiting")
@@ -125,4 +132,34 @@ object WordCloud {
 
   }
 
+}
+
+object WordCloudVisualizer extends JFrame {
+
+  private var wordCloudData: Seq[(String, Int)] = Seq.empty
+
+  setTitle("Word Cloud Visualization")
+  setSize(new Dimension(800, 600))
+  setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE)
+  setVisible(true)
+
+  override def paint(g: Graphics): Unit = {
+    super.paint(g)
+    if (wordCloudData.nonEmpty) {
+      val maxFrequency = wordCloudData.map(_._2).max
+      val fontSizeMultiplier = 5
+
+      wordCloudData.zipWithIndex.foreach { case ((word, frequency), index) =>
+        val fontSize = (frequency.toDouble / maxFrequency * fontSizeMultiplier * 10).toInt
+        g.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, fontSize))
+        g.setColor(Color.getHSBColor((index * 0.1f) % 1.0f, 0.7f, 0.8f))
+        g.drawString(word, 50 + (index % 10) * 70, 100 + (index / 10) * 70)
+      }
+    }
+  }
+
+  def updateWordCloud(data: Seq[(String, Int)]): Unit = {
+    wordCloudData = data
+    repaint()
+  }
 }
